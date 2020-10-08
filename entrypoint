@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+function find_default_route {
+    /sbin/ip route \
+             | awk '$1 == "default" { print $3; exit }'
+}
+
+if [[ $DOCKER_HOST_VARS ]]; then
+    host_ip=$(find_default_route)
+    if [[ ! $host_ip ]]; then
+        echo "Unable to determine Docker host address!" >&2
+        exit 1
+    fi
+    declare -n tgt
+    for tgt in $DOCKER_HOST_VARS; do
+        tgt=$host_ip
+    done
+    export $DOCKER_HOST_VARS
+fi
+
+exec "$@"
